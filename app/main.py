@@ -1,19 +1,15 @@
 import streamlit as st
-import pickle5 as pickle
+import joblib
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 
-
 def get_clean_data():
-    data = pd.read_csv("data\data.csv")
-    #print(data.head())
-    # droping the Unnamed and id because unnamed have Nan value and id is not required
-    data = data.drop(['Unnamed: 32','id'], axis=1)
-    # now we have to encode the data of diagnosis
-    data['diagnosis'] = data['diagnosis'].map({'M':1,'B':0})
-    #print(data)
-    #print(data)
+    data = pd.read_csv("data/data.csv")
+    # Dropping the Unnamed and id columns because Unnamed has NaN values and id is not required
+    data = data.drop(['Unnamed: 32', 'id'], axis=1)
+    # Encode the diagnosis data
+    data['diagnosis'] = data['diagnosis'].map({'M': 1, 'B': 0})
     return data
 
 def add_sidebar():
@@ -54,53 +50,46 @@ def add_sidebar():
         ("Fractal dimension (worst)", "fractal_dimension_worst"),
     ]
 
-
-  
-
     input_dict = {}
 
-
-    for label,key in slider_labels:
+    for label, key in slider_labels:
         input_dict[key] = st.sidebar.slider(
             label,
-            min_value =float(0),
-            max_value =float(data[key].max()),
-            value =float(data[key].mean())
+            min_value=float(0),
+            max_value=float(data[key].max()),
+            value=float(data[key].mean())
         )
-    
+
     return input_dict
 
-
 def add_predictions(input_data):
-  model = pickle.load(open("model/model.pkl", "rb"))
-  scaler = pickle.load(open("model/scaler.pkl", "rb"))
-  
-  input_array = np.array(list(input_data.values())).reshape(1, -1)
-  
-  input_array_scaled = scaler.transform(input_array)
-  
-  prediction = model.predict(input_array_scaled)
-  
-  st.subheader("Cell cluster prediction")
-  st.write("The cell cluster is:")
-  
-  if prediction[0] == 0:
-    st.write("<span class='diagnosis benign'>**Benign**</span>", unsafe_allow_html=True)
-  else:
-    st.write("<span class='diagnosis malicious'>**Malicious**</span>", unsafe_allow_html=True)
-    
-  
-  st.write("Probability of being benign: ", model.predict_proba(input_array_scaled)[0][0])
-  st.write("Probability of being malicious: ", model.predict_proba(input_array_scaled)[0][1])
-  
-  st.write("This app can assist medical professionals in making a diagnosis, but should not be used as a substitute for a professional diagnosis.")
+    model = joblib.load("model/model.joblib")
+    scaler = joblib.load("model/scaler.joblib")
+
+    input_array = np.array(list(input_data.values())).reshape(1, -1)
+    input_array_scaled = scaler.transform(input_array)
+
+    prediction = model.predict(input_array_scaled)
+
+    st.subheader("Cell cluster prediction")
+    st.write("The cell cluster is:")
+
+    if prediction[0] == 0:
+        st.write("<span class='diagnosis benign'>**Benign**</span>", unsafe_allow_html=True)
+    else:
+        st.write("<span class='diagnosis malicious'>**Malicious**</span>", unsafe_allow_html=True)
+
+    st.write("Probability of being benign: ", model.predict_proba(input_array_scaled)[0][0])
+    st.write("Probability of being malicious: ", model.predict_proba(input_array_scaled)[0][1])
+
+    st.write("This app can assist medical professionals in making a diagnosis, but should not be used as a substitute for a professional diagnosis.")
 
 def main():
     st.set_page_config(
-        page_title = "breast cancer predictor",
-        page_icon = ":female-doctor:",
-        layout = "wide",
-        initial_sidebar_state = "expanded"
+        page_title="Breast Cancer Predictor",
+        page_icon=":female-doctor:",
+        layout="wide",
+        initial_sidebar_state="expanded"
     )
 
     st.markdown("""
@@ -123,22 +112,13 @@ def main():
         display: inline-block; /* Inline block for button appearance */
     }
 </style>
-
     """, unsafe_allow_html=True)
 
-
     input_data = add_sidebar()
-   
-
-
 
     with st.container():
-        st.title("Breast cancer predictor")
-        
-
+        st.title("Breast Cancer Predictor")
         add_predictions(input_data)
-
-    
 
 if __name__ == '__main__':
     main()
